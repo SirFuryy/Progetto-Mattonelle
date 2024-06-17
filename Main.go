@@ -8,3 +8,7 @@ type Point struct {
 func main() {
 	
 }
+
+func cerca() {
+	
+}
