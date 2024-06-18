@@ -1,5 +1,11 @@
 package main
 
+import (
+	"fmt"
+	"math/rand"
+	"time"
+)
+
 //struttura dati per rappresentare un punto su un piano cartesiano
 type Punto struct { 
 	x int
@@ -30,8 +36,60 @@ type Piano struct {
 }
 
 func main() {
+	piano := creaPiano(6)
+
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	valgen:= rnd.Intn(26)
+	//genera un numero casuale tra 10 e 26
+	for valgen < 10 {
+		valgen = rnd.Intn(26)
+	}
+
+	for i := 0; i < valgen; i++ {
+		num1 := rand.Intn(6)
+		num2 := rand.Intn(6)
+		color := string(rune(97 + rand.Intn(26)))
+		intens := rand.Int()
+
+		colora(piano, num1, num2, color, intens)
+	}
 	
+
+	stampaPiano(piano)
 }
+
+//funzione che colora la piastrella in posizione num1, num2 con il colore 
+//e l'intensità passati, a prescindere dallo stato precedente
+func colora(piano Piano, num1, num2 int, color string, intens int) {
+	piano.piastrelle[num1][num2].colore = color
+	piano.piastrelle[num1][num2].intenisita = intens
+}
+
+//funzione di utilità che stampa lo stato del piano, con il colore delle piastrelle
+//attualmente accese (non l'intensità)
+func stampaPiano(piano Piano) {
+	fmt.Println("^")
+	fmt.Println("|")
+	str := "|"
+	for i:=0; i<len(piano.piastrelle); i++ {
+		str += "---|"
+	}
+	fmt.Println(str)
+
+	for i := 0; i < len(piano.piastrelle); i++ {
+		fmt.Print("|")
+		for j := 0; j < len(piano.piastrelle[i]); j++ {
+			fmt.Print(" " + piano.piastrelle[i][j].colore + " |")
+		}
+		fmt.Println()
+		if i == len(piano.piastrelle)-1 {
+			fmt.Println(str+"->")
+		} else {
+			fmt.Println(str)
+		}
+	}
+}
+
 
 //funzione che crea un piano di piastrelle, con n piastrelle per lato
 func creaPiano(n int) Piano{
@@ -81,10 +139,11 @@ func creaCirconvicini(piano [][]Piastrella, n int) [][]Piastrella{
 	return piano
 }
 
+//funzione che crea una piastrella con i punti passati
 func creaPiastrella(i, j int) Piastrella {
 	return Piastrella{
 		[]Punto{{i,j}, {i,j+1}, {i+1,j+1}, {i+1,j}},
-		"",
+		" ",
 		0, 
 		nil}
 }
