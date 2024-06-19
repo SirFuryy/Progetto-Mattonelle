@@ -1,0 +1,22 @@
+func main() {
+	piano := creaPiano(6)
+
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	valgen:= rnd.Intn(26)
+	//genera un numero casuale tra 10 e 26
+	for valgen < 10 {
+		valgen = rnd.Intn(26)
+	}
+
+	for i := 0; i < valgen; i++ {
+		num1 := rand.Intn(6)
+		num2 := rand.Intn(6)
+		color := string(rune(97 + rand.Intn(26)))
+		intens := rand.Int()
+
+		colora(piano, num1, num2, color, intens)
+	}
+	
+
+	stampaPiano(piano)
+}
