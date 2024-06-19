@@ -62,8 +62,8 @@ func main() {
 
 
 
-/* FUNZIONI DI STAMPA*/
 
+/* FUNZIONI DI STAMPA*/
 
 //funzione di utilità che stampa lo stato del piano, con il colore delle piastrelle
 //attualmente accese (non l'intensità)
@@ -107,8 +107,10 @@ func stampaPiastrella(piast Piastrella) {
 	fmt.Println(str)
 }
 
-/* FUNZIONI DI COSTRUZIONE */
 
+
+
+/* FUNZIONI DI COSTRUZIONE */
 
 //funzione costruttrice che crea un piano di piastrelle, con n piastrelle per lato
 func creaPiano(n int) Piano{
@@ -214,6 +216,8 @@ func creaPiastrella(i, j int) Piastrella {
 }
 
 
+
+
 /*  FUNZIONI DI UTILITA  */
 
 //funzione di utilità che restituisce true se la piastrella è accessa, 
@@ -233,8 +237,8 @@ func circonvicini(piastX, piastY Piastrella) bool {
 	return false
 }
 
-//trova la regione di piastrelle adiacenti alla piastrella in posizione x, y
-func trovaRegione(piano Piano, x, y int) []Piastrella {
+//trova il blocco, ovvero la regione di ampiezza massima, di piastrelle adiacenti alla piastrella in posizione x, y
+func trovaBlocco(piano Piano, x, y int) []Piastrella {
 	visiting, piast := make([]Piastrella, 0), make([]Piastrella, 0)
 	visiting = append(visiting, piano.piastrelle[x][y])
 	piast = append(piast, piano.piastrelle[x][y])
@@ -264,6 +268,44 @@ func trovaRegione(piano Piano, x, y int) []Piastrella {
 
 	return piast
 }
+
+//trova il blocco omogeneo, ovvero la regione di ampiezza massima, di 
+//piastrelle adiacenti alla piastrella in posizione x, y con lo stesso 
+//colore della piastrella in posizione x, y
+func trovaBloccoOmogeneo(piano Piano, x, y int) []Piastrella {
+	visiting, piast := make([]Piastrella, 0), make([]Piastrella, 0)
+	colore := piano.piastrelle[x][y].colore
+	visiting = append(visiting, piano.piastrelle[x][y])
+	piast = append(piast, piano.piastrelle[x][y])
+	for len(visiting) > 0 {
+		u := visiting[0]
+		visiting = visiting[1:]
+		for i := 0; i < len(u.circonvicini); i++ {
+			if u.circonvicini[i] == nil {
+				continue
+			}
+			pcontrollo := *u.circonvicini[i]
+			if Accesa(pcontrollo) && pcontrollo.colore == colore{
+				nonvisit := true
+				for j := 0; j < len(piast); j++ {
+					if piast[j].punti[0] == pcontrollo.punti[0] {
+						nonvisit = false
+						break
+					}
+				}
+				if nonvisit {
+					visiting = append(visiting, pcontrollo)
+					piast = append(piast, pcontrollo)
+				}
+			}
+		}
+	}
+
+	return piast
+}
+
+
+
 
 /* FUNZIONI RICHIESTE DAL PROGETTO */
 
@@ -301,15 +343,33 @@ func stampa(piano Piano) {
 //Calcola e stampa la somma delle intensità delle piastrelle contenute 
 //nel blocco di appartenenza di Piastrella(x, y).
 //Se Piastrella(x, y) è spenta, restituisce 0.
-func blocco(piano Piano, x, y int) {
-	
+func blocco(piano Piano, x, y int) int{
+	if !Accesa(piano.piastrelle[x][y]) {
+		return 0
+	}
+	pias := trovaBlocco(piano, x, y)
+	somma := 0
+	for i := 0; i < len(pias); i++ {
+		somma += pias[i].intenisita
+	}
+	fmt.Println("Somma intensità blocco omogeneo: ", somma)
+	return somma
 }
 
 //Calcola e stampa la somma delle intensit`a delle piastrelle contenute 
 //nel blocco omogeneo di appartenenza di Piastrella(x, y). Se Piastrella(x, y) 
 //`e spenta, restituisce 0.
-func bloccoOmog(piano Piano, x, y int) {
-	
+func bloccoOmog(piano Piano, x, y int) int{
+	if !Accesa(piano.piastrelle[x][y]) {
+		return 0
+	}
+	pias := trovaBloccoOmogeneo(piano, x, y)
+	somma := 0
+	for i := 0; i < len(pias); i++ {
+		somma += pias[i].intenisita
+	}
+	fmt.Println("Somma intensità blocco omogeneo: ", somma)
+	return somma
 }
 
 //Applica a Piastrella(x, y) la prima regola di propagazione applicabile
