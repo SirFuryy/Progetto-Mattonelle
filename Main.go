@@ -95,6 +95,18 @@ func stampaPiano(piano Piano) {
 	fmt.Println()
 }
 
+//funzione di stampa che stampa tutte le caratteristiche di una piastrella
+func stampaPiastrella(piast Piastrella) {
+	str := "Piastrella di punti:"
+
+	for _, v := range piast.punti {
+		str += fmt.Sprintf(" (%d, %d)", v.x, v.y)
+	}
+
+	str += ", colore: '" + piast.colore + "' e intensità: " + fmt.Sprint(piast.intenisita)
+	fmt.Println(str)
+}
+
 /* FUNZIONI DI COSTRUZIONE */
 
 
@@ -201,17 +213,8 @@ func creaPiastrella(i, j int) Piastrella {
 		nil}
 }
 
-//funzione di utilità che stampa tutte le caratteristiche di una piastrella
-func stampaPiastrella(piast Piastrella) {
-	str := "Piastrella di punti:"
 
-	for _, v := range piast.punti {
-		str += fmt.Sprintf(" (%d, %d)", v.x, v.y)
-	}
-
-	str += ", colore: '" + piast.colore + "' e intensità: " + fmt.Sprint(piast.intenisita)
-	fmt.Println(str)
-}
+/*  FUNZIONI DI UTILITA  */
 
 //funzione di utilità che restituisce true se la piastrella è accessa, 
 //false altrimenti
@@ -262,7 +265,7 @@ func trovaRegione(piano Piano, x, y int) []Piastrella {
 	return piast
 }
 
-
+/* FUNZIONI RICHIESTE DAL PROGETTO */
 
 //funzione che colora la piastrella in posizione num1, num2 con il colore 
 //e l'intensità passati, a prescindere dallo stato precedente
