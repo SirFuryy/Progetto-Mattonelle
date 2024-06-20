@@ -62,11 +62,16 @@ func main() {
 	colora(piano, 2, 2, "d", 59)
 	colora(piano, 5, 5, "u", 69)
 	colora(piano, 0, 3, "t", 13)
+	colora(piano, 5, 2, "a", 10)
 	
 
 	stampaPiano(piano)
 
-	pista(piano, 0, 2, "NEEESSNOOO")
+	regola(piano, "u 1 o 1 l")
+	regola(piano, "u 1 o 1 a")
+	regola(piano, "l 2 i")
+
+	stampa(piano)
 }
 
 
@@ -358,7 +363,20 @@ func stato(piano Piano, x, y int) {
 
 //Stampa l’elenco delle regole di propagazione, nell’ordine attuale.
 func stampa(piano Piano) {
-	
+	for k := range piano.regole {
+		//giallo: 1 rosso 1 blu
+		str:=k.beta + ": "
+		lettere := make(map[string]int)
+		for i := 0; i < len(k.alfa); i++ {
+			lettere[k.alfa[i]]++
+		}
+
+		for k, v := range lettere {
+			str += fmt.Sprintf("%d %s ", v, k)
+		}
+
+		fmt.Println(str)
+	}
 }
 
 //Calcola e stampa la somma delle intensità delle piastrelle contenute 
