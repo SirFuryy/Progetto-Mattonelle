@@ -67,11 +67,9 @@ func main() {
 
 	stampaPiano(piano)
 
-	regola(piano, "u 1 o 1 l")
-	regola(piano, "u 1 o 1 a")
-	regola(piano, "l 2 i")
-
-	stampa(piano)
+	fmt.Println(piano.piastrelle[3][5].circonvicini)
+	fmt.Println(piano.piastrelle[3][5].circonvicini[4].punti[0])
+	propaga(piano, 3, 5)	
 }
 
 
@@ -415,7 +413,52 @@ func bloccoOmog(piano Piano, x, y int) int{
 //dell’elenco, ricolorando la piastrella. Se nessuna regola è applicabile,
 //non viene eseguita alcuna operazione.
 func propaga(piano Piano, x, y int) {
+	intorno := piano.piastrelle[x][y].circonvicini
+	moment := intorno[5:]
+	intorno = intorno[:4]
+	intorno = append(intorno, moment...)
 	
+	var reg Regola
+	regvalida := false
+	for k := range piano.regole {
+		mappaIntorno := make(map[string]int)
+		for i := 0; i < len(intorno); i++ {
+			if intorno[i] != nil {
+				mappaIntorno[intorno[i].colore]++
+			}
+		}
+
+		mappaRegola := make(map[string]int)
+		for i := 0; i < len(k.alfa); i++ {
+			mappaRegola[k.alfa[i]]++
+		}
+
+		trovato := false
+		for k, v := range mappaRegola {
+			if mappaIntorno[k] < v {
+				trovato = false
+				break
+			} else {
+				trovato = true
+			}
+		}
+
+		if trovato {
+			reg = *k
+			regvalida = true
+			break
+		}
+	}
+
+	if !regvalida {
+		return
+	}
+
+	piano.piastrelle[x][y].colore = reg.beta
+	if !Accesa(piano.piastrelle[x][y]) {
+		piano.piastrelle[x][y].intenisita = 1
+	}
+	piano.regole[&reg]++
 }
 
 //Propaga il colore sul blocco di appartenenza di Piastrella(x, y).
