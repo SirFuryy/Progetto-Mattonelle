@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 /* STRUTTURE DATI*/
@@ -29,12 +31,19 @@ type Piastrella struct {
 //struttura dati per rappresentare un piano di piastrelle, 
 //con un numero di piastrelle n*n, con n > 0
 //
-//il piano è composto da piastrelle, che sono disposte in una matrice n*n
+//il piano è composto da piastrelle, che sono disposte in una matrice n*n, 
 type Piano struct {
 	piastrelle [][]Piastrella
-	regole []string
+	regole map[*Regola]int
 }
 
+//struttura dati per rappresentare una regola di propagazione,
+//con un insieme di alfa, che sono i colori delle piastrelle che circondano la
+//piastrella a cui applicare la regola, e un beta, che è il colore che verrà propagato
+type Regola struct {
+	alfa []string
+	beta string
+}
 
 
 
@@ -122,7 +131,7 @@ func creaPiano(n int) Piano{
 		}
 	}
 
-	return Piano{creaCirconvicini(piano, n), nil}
+	return Piano{creaCirconvicini(piano, n), make(map[*Regola]int)}
 }
 
 //funzione costruttrice che crea i circonvicini di ogni piastrella del piano
@@ -325,8 +334,20 @@ func spegni(piano Piano, x, y int) {
 
 //Definisce la regola di propagazione k1α1 + k2α2 + · · · + knαn → β e 
 //la inserisce in fondo all’elenco delle regole.
-func regola(piano Piano, regola []string) {
-	
+func regola(piano Piano, regola string) {
+	reg := strings.Split(regola, " ")
+	beta := reg[0]
+	reg = reg[1:]
+	alfa := make([]string, 0, 8)
+	for i := 0; i < len(reg); i = i+2 {
+		k, _ := strconv.Atoi(reg[i])
+		a := reg[i+1]
+		for j:=0; j<k; j++ {
+			alfa = append(alfa,  a)
+		}
+	}
+	 
+	piano.regole[&Regola{alfa, beta}] = 0
 }
 
 //Stampa e restituisce il colore e l’intensità di Piastrella(x, y). 
@@ -352,7 +373,7 @@ func blocco(piano Piano, x, y int) int{
 	for i := 0; i < len(pias); i++ {
 		somma += pias[i].intenisita
 	}
-	fmt.Println("Somma intensità blocco omogeneo: ", somma)
+	fmt.Println("Somma intensità blocco: ", somma)
 	return somma
 }
 
