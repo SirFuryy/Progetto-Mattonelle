@@ -65,11 +65,19 @@ func main() {
 	colora(piano, 5, 2, "a", 10)
 	
 
+	
 	stampaPiano(piano)
-
-	fmt.Println(piano.piastrelle[3][5].circonvicini)
-	fmt.Println(piano.piastrelle[3][5].circonvicini[4].punti[0])
-	propaga(piano, 3, 5)	
+	stato(piano, 1, 3)
+	regola(piano, "a 1 g 1 d")
+	
+	regola(piano, "b 1 a 1 d")
+	
+	regola(piano, "c 1 t 1 d")
+	
+	stampa(piano)
+	propaga(piano, 1, 3)
+	stato(piano, 1, 3)
+	stampaPiano(piano)
 }
 
 
@@ -420,14 +428,15 @@ func propaga(piano Piano, x, y int) {
 	
 	var reg Regola
 	regvalida := false
-	for k := range piano.regole {
-		mappaIntorno := make(map[string]int)
-		for i := 0; i < len(intorno); i++ {
-			if intorno[i] != nil {
-				mappaIntorno[intorno[i].colore]++
-			}
-		}
 
+	mappaIntorno := make(map[string]int)
+	for i := 0; i < len(intorno); i++ {
+		if intorno[i] != nil {
+			mappaIntorno[intorno[i].colore]++
+		}
+	}
+
+	for k := range piano.regole {
 		mappaRegola := make(map[string]int)
 		for i := 0; i < len(k.alfa); i++ {
 			mappaRegola[k.alfa[i]]++
