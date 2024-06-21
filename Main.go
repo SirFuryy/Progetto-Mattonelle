@@ -69,11 +69,9 @@ func main() {
 	
 	stampaPiano(piano)
 	stato(piano, 1, 3)
-	regola(piano, "a 1 g 1 d")
-	
-	regola(piano, "b 1 a 1 d")
-	
-	regola(piano, "c 1 t 1 d")
+	piano = regola(piano, "a 1 g 1 d")
+	piano = regola(piano, "b 1 a 1 d")
+	piano = regola(piano, "c 1 t 1 d")
 	
 	stampa(piano)
 	propaga(piano, 1, 3)
@@ -346,7 +344,7 @@ func spegni(piano Piano, x, y int) {
 
 //Definisce la regola di propagazione k1α1 + k2α2 + · · · + knαn → β e 
 //la inserisce in fondo all’elenco delle regole.
-func regola(piano Piano, regola string) {
+func regola(piano Piano, regola string) Piano{
 	reg := strings.Split(regola, " ")
 	beta := reg[0]
 	reg = reg[1:]
@@ -356,8 +354,9 @@ func regola(piano Piano, regola string) {
 		a := reg[i+1]
 		alfa[a] = k
 	}
-	 
+
 	piano.regole = append(piano.regole, Regola{alfa, beta, 0})
+	return piano
 }
 //Stampa e restituisce il colore e l’intensità di Piastrella(x, y). 
 //Se Piastrella(x, y) è spenta, non stampa nulla.
