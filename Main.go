@@ -34,15 +34,16 @@ type Piastrella struct {
 //il piano è composto da piastrelle, che sono disposte in una matrice n*n, 
 type Piano struct {
 	piastrelle [][]Piastrella
-	regole map[*Regola]int
+	regole []Regola
 }
 
 //struttura dati per rappresentare una regola di propagazione,
 //con un insieme di alfa, che sono i colori delle piastrelle che circondano la
 //piastrella a cui applicare la regola, e un beta, che è il colore che verrà propagato
 type Regola struct {
-	alfa []string
+	alfa map[string]int
 	beta string
+	usato int
 }
 
 
@@ -142,7 +143,7 @@ func creaPiano(n int) Piano{
 		}
 	}
 
-	return Piano{creaCirconvicini(piano, n), make(map[*Regola]int)}
+	return Piano{creaCirconvicini(piano, n), make([]Regola, 0)}
 }
 
 //funzione costruttrice che crea i circonvicini di ogni piastrella del piano
@@ -349,18 +350,15 @@ func regola(piano Piano, regola string) {
 	reg := strings.Split(regola, " ")
 	beta := reg[0]
 	reg = reg[1:]
-	alfa := make([]string, 0, 8)
+	alfa := make(map[string]int)
 	for i := 0; i < len(reg); i = i+2 {
 		k, _ := strconv.Atoi(reg[i])
 		a := reg[i+1]
-		for j:=0; j<k; j++ {
-			alfa = append(alfa,  a)
-		}
+		alfa[a] = k
 	}
 	 
-	piano.regole[&Regola{alfa, beta}] = 0
+	piano.regole = append(piano.regole, Regola{alfa, beta, 0})
 }
-
 //Stampa e restituisce il colore e l’intensità di Piastrella(x, y). 
 //Se Piastrella(x, y) è spenta, non stampa nulla.
 func stato(piano Piano, x, y int) {
@@ -369,15 +367,11 @@ func stato(piano Piano, x, y int) {
 
 //Stampa l’elenco delle regole di propagazione, nell’ordine attuale.
 func stampa(piano Piano) {
-	for k := range piano.regole {
+	for _, v := range piano.regole {
 		//giallo: 1 rosso 1 blu
-		str:=k.beta + ": "
-		lettere := make(map[string]int)
-		for i := 0; i < len(k.alfa); i++ {
-			lettere[k.alfa[i]]++
-		}
+		str:=v.beta + ": "
 
-		for k, v := range lettere {
+		for k, v := range v.alfa {
 			str += fmt.Sprintf("%d %s ", v, k)
 		}
 
@@ -436,15 +430,10 @@ func propaga(piano Piano, x, y int) {
 		}
 	}
 
-	for k := range piano.regole {
-		mappaRegola := make(map[string]int)
-		for i := 0; i < len(k.alfa); i++ {
-			mappaRegola[k.alfa[i]]++
-		}
-
+	for _, v := range piano.regole {
 		trovato := false
-		for k, v := range mappaRegola {
-			if mappaIntorno[k] < v {
+		for k, u := range v.alfa {
+			if mappaIntorno[k] < u {
 				trovato = false
 				break
 			} else {
@@ -453,8 +442,9 @@ func propaga(piano Piano, x, y int) {
 		}
 
 		if trovato {
-			reg = *k
+			reg = v
 			regvalida = true
+			v.usato++
 			break
 		}
 	}
@@ -467,7 +457,6 @@ func propaga(piano Piano, x, y int) {
 	if !Accesa(piano.piastrelle[x][y]) {
 		piano.piastrelle[x][y].intenisita = 1
 	}
-	piano.regole[&reg]++
 }
 
 //Propaga il colore sul blocco di appartenenza di Piastrella(x, y).
