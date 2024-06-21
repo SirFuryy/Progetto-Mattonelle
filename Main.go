@@ -68,18 +68,114 @@ func main() {
 
 	
 	stampaPiano(piano)
-	stato(piano, 1, 3)
+
 	piano = regola(piano, "a 1 g 1 d")
 	piano = regola(piano, "b 1 a 1 d")
 	piano = regola(piano, "c 1 t 1 d")
 	
-	stampa(piano)
-	propaga(piano, 1, 3)
-	stato(piano, 1, 3)
-	stampaPiano(piano)
+	propagaBlocco(piano, 2, 2)
 }
 
+//Applica a Piastrella(x, y) la prima regola di propagazione applicabile
+//dell’elenco, ricolorando la piastrella. Se nessuna regola è applicabile,
+//non viene eseguita alcuna operazione.
+func propaga(piano Piano, x, y int) {
+	intorno := piano.piastrelle[x][y].circonvicini
+	moment := intorno[5:]
+	intorno = intorno[:4]
+	intorno = append(intorno, moment...)
+	
+	var reg Regola
+	regvalida := false
 
+	mappaIntorno := make(map[string]int)
+	for i := 0; i < len(intorno); i++ {
+		if intorno[i] != nil {
+			mappaIntorno[intorno[i].colore]++
+		}
+	}
+
+	for _, v := range piano.regole {
+		trovato := false
+		for k, u := range v.alfa {
+			if mappaIntorno[k] < u {
+				trovato = false
+				break
+			} else {
+				trovato = true
+			}
+		}
+
+		if trovato {
+			reg = v
+			regvalida = true
+			v.usato++
+			break
+		}
+	}
+
+	if !regvalida {
+		return
+	}
+
+	piano.piastrelle[x][y].colore = reg.beta
+	if !Accesa(piano.piastrelle[x][y]) {
+		piano.piastrelle[x][y].intenisita = 1
+	}
+}
+
+//Propaga il colore sul blocco di appartenenza di Piastrella(x, y).
+func propagaBlocco(piano Piano, x, y int) {
+	blocco := trovaBlocco(piano, x, y)
+	copia := make([]Piastrella, len(blocco))
+	copy(copia, blocco)
+
+	for i := 0; i < len(blocco); i++ {
+		intorno := blocco[i].circonvicini
+		moment := intorno[5:]
+		intorno = intorno[:4]
+		intorno = append(intorno, moment...)
+	
+		var reg Regola
+		regvalida := false
+
+		mappaIntorno := make(map[string]int)
+		for i := 0; i < len(intorno); i++ {
+			if intorno[i] != nil {
+				mappaIntorno[intorno[i].colore]++
+			}
+		}
+
+		for _, v := range piano.regole {
+			trovato := false
+			for k, u := range v.alfa {
+				if mappaIntorno[k] < u {
+					trovato = false
+					break
+				} else {
+					trovato = true
+				}
+			}
+
+			if trovato {
+				reg = v
+				regvalida = true
+				v.usato++
+				break
+			}
+		}
+
+		if regvalida {
+			copia[i].colore = reg.beta
+		}
+	}
+
+	for i := 0; i < len(copia); i++ {
+		if copia[i].colore != blocco[i].colore {
+			blocco[i].colore = copia[i].colore
+		}
+	}
+}
 
 
 /* FUNZIONI DI STAMPA*/
@@ -410,58 +506,15 @@ func bloccoOmog(piano Piano, x, y int) int{
 	return somma
 }
 
-//Applica a Piastrella(x, y) la prima regola di propagazione applicabile
-//dell’elenco, ricolorando la piastrella. Se nessuna regola è applicabile,
-//non viene eseguita alcuna operazione.
-func propaga(piano Piano, x, y int) {
-	intorno := piano.piastrelle[x][y].circonvicini
-	moment := intorno[5:]
-	intorno = intorno[:4]
-	intorno = append(intorno, moment...)
-	
-	var reg Regola
-	regvalida := false
 
-	mappaIntorno := make(map[string]int)
-	for i := 0; i < len(intorno); i++ {
-		if intorno[i] != nil {
-			mappaIntorno[intorno[i].colore]++
-		}
-	}
 
-	for _, v := range piano.regole {
-		trovato := false
-		for k, u := range v.alfa {
-			if mappaIntorno[k] < u {
-				trovato = false
-				break
-			} else {
-				trovato = true
-			}
-		}
 
-		if trovato {
-			reg = v
-			regvalida = true
-			v.usato++
-			break
-		}
-	}
 
-	if !regvalida {
-		return
-	}
 
-	piano.piastrelle[x][y].colore = reg.beta
-	if !Accesa(piano.piastrelle[x][y]) {
-		piano.piastrelle[x][y].intenisita = 1
-	}
-}
 
-//Propaga il colore sul blocco di appartenenza di Piastrella(x, y).
-func propagaBlocco(piano Piano, x, y int) {
-	
-}
+
+
+
 
 //Ordina l’elenco delle regole di propagazione in base al consumo delle 
 //regole stesse: la regola con consumo maggiore diventa l’ultima dell’elenco. 
