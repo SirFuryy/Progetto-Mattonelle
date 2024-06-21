@@ -321,6 +321,49 @@ func trovaBloccoOmogeneo(piano Piano, x, y int) []Piastrella {
 	return piast
 }
 
+// Funzione di utilità che implementa l'algoritmo di merge sort per 
+//ordinare l'array di regole in modo crescente
+func mergeSort(regole []Regola) []Regola {
+	if len(regole) <= 1 {
+		return regole
+	}
+
+	meta := len(regole) / 2
+	sinistro := mergeSort(regole[:meta])
+	destro := mergeSort(regole[meta:])
+
+	return merge(sinistro, destro)
+}
+
+//Funzione di utilità che svolge il merge per combinare due array 
+//ordinati di regole
+func merge(sinistro, destro []Regola) []Regola {
+	risultato := make([]Regola, 0)
+	i, j := 0, 0
+
+	for i < len(sinistro) && j < len(destro) {
+		if sinistro[i].usato <= destro[j].usato {
+			risultato = append(risultato, sinistro[i])
+			i++
+		} else {
+			risultato = append(risultato, destro[j])
+			j++
+		}
+	}
+
+	for i < len(sinistro) {
+		risultato = append(risultato, sinistro[i])
+		i++
+	}
+
+	for j < len(destro) {
+		risultato = append(risultato, destro[j])
+		j++
+	}
+
+	return risultato
+}
+
 
 
 
@@ -521,7 +564,7 @@ func propagaBlocco(piano Piano, x, y int) {
 //regole stesse: la regola con consumo maggiore diventa l’ultima dell’elenco. 
 //Se due regole hanno consumo uguale mantengono il loro ordine relativo.
 func ordina(piano Piano) {
-	
+	piano.regole = mergeSort(piano.regole)
 }
 
 //Stampa la pista che parte da Piastrella(x, y) e segue la sequenza di 
