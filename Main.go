@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -46,37 +48,109 @@ type Regola struct {
 	usato int
 }
 
-
+var eseguito bool = true
 
 func main() {
-	piano := creaPiano(6)
+	var input string
+	var piano Piano
+	piano = creaPiano(10, 10)
+	for eseguito {
+		scanner := bufio.NewScanner(os.Stdin)
+		if scanner.Scan() {
+			input = scanner.Text()
+		}
+		esegui(piano, input)
+	}
 
-	colora(piano, 3, 5, "x", 96)
-	colora(piano, 1, 3, "h", 90)
-	colora(piano, 2, 1, "s", 44)
-	colora(piano, 2, 3, "o", 78)
-	colora(piano, 0, 5, "f", 6)
-	colora(piano, 0, 2, "a", 46)
-	colora(piano, 5, 1, "i", 45)
-	colora(piano, 4, 1, "i", 27)
-	colora(piano, 0, 1, "f", 18)
-	colora(piano, 2, 2, "d", 59)
-	colora(piano, 5, 5, "u", 69)
-	colora(piano, 0, 3, "t", 13)
-	colora(piano, 5, 2, "a", 10)
-	
 
-	
-	stampaPiano(piano)
 
-	piano = regola(piano, "a 1 s 1 o")
-	piano = regola(piano, "b 1 h 1 d")
-	piano = regola(piano, "c 1 t")
+}
 
-	
-	
-	propagaBlocco(piano, 2, 2)
-	stampaPiano(piano)
+//funzione che esegue il comando passato in input
+func esegui(piano Piano, input string) {
+	inp := strings.Split(input, " ")
+	comando := inp[0]
+	inp = inp[1:]
+	switch comando {
+	case "C":
+		x, _ := strconv.Atoi(inp[0])
+		y, _ := strconv.Atoi(inp[1])
+		alpha := inp[2]
+		i, _ := strconv.Atoi(inp[3])
+		checkPiano(piano, x, y)
+		colora(piano, x, y, alpha, i)
+		break
+	case "S":
+		x, _ := strconv.Atoi(inp[0])
+		y, _ := strconv.Atoi(inp[1])
+		checkPiano(piano, x, y)
+		spegni(piano, x, y)
+		break
+	case "r":
+		reg := strings.Join(inp, " ")
+		regola(piano, reg)
+		break
+	case "?":
+		x, _ := strconv.Atoi(inp[0])
+		y, _ := strconv.Atoi(inp[1])
+		checkPiano(piano, x, y)
+		stato(piano, x, y)
+		break
+	case "s":
+		stampa(piano)
+		break
+	case "b":
+		x, _ := strconv.Atoi(inp[0])
+		y, _ := strconv.Atoi(inp[1])
+		checkPiano(piano, x, y)
+		blocco(piano, x, y)
+		break
+	case "B":
+		x, _ := strconv.Atoi(inp[0])
+		y, _ := strconv.Atoi(inp[1])
+		checkPiano(piano, x, y)
+		bloccoOmog(piano, x, y)
+		break
+	case "p":
+		x, _ := strconv.Atoi(inp[0])
+		y, _ := strconv.Atoi(inp[1])
+		checkPiano(piano, x, y)
+		propaga(piano, x, y)
+		break
+	case "P":
+		x, _ := strconv.Atoi(inp[0])
+		y, _ := strconv.Atoi(inp[1])
+		checkPiano(piano, x, y)
+		propagaBlocco(piano, x, y)
+		break
+	case "o":
+		ordina(piano)
+		break
+	case "q":
+		eseguito = false
+		break
+	case "t":
+		x, _ := strconv.Atoi(inp[0])
+		y, _ := strconv.Atoi(inp[1])
+		s := inp[2]
+		checkPiano(piano, x, y)
+		pista(piano, x, y, s)
+		break
+	case "L":
+		x1, _ := strconv.Atoi(inp[0])
+		y1, _ := strconv.Atoi(inp[1])
+		x2, _ := strconv.Atoi(inp[2])
+		y2, _ := strconv.Atoi(inp[3])
+		checkPiano(piano, x1, y1)
+		checkPiano(piano, x2, y2)
+		lung(piano, x1, y1, x2, y2)
+		break
+	case "a":
+		stampaPiano(piano)
+		break
+	default:
+		break
+	}
 }
 
 
@@ -129,17 +203,87 @@ func stampaPiastrella(piast Piastrella) {
 
 /* FUNZIONI DI COSTRUZIONE */
 
+//funzione di utilità che controlla se la piastrella in posizione x, y è
+//all'interno del piano
+func checkPiano(piano Piano, x, y int) {
+	lenX := len(piano.piastrelle)
+	lenY := len(piano.piastrelle[0])
+
+	if x >= lenX && y >= lenY {
+		piano.piastrelle = append(piano.piastrelle, make([][]Piastrella, x+1-lenX)...)
+		for i := lenX; i <= x; i++ {		//inserisco le nuove x
+			piano.piastrelle[i] = make([]Piastrella, lenY)
+			for j := 0; j < lenY; j++ {
+				piano.piastrelle[i][j] = creaPiastrella(i, j)
+			}
+		}
+		for i := 0; i <= x; i++ {		//inserisco le nuove y e l'incorcio tra le nuove x e e le nuove y
+			piano.piastrelle[i] = append(piano.piastrelle[i], make([]Piastrella, y+1-lenY)...)
+			for j := lenY; j <= y; j++ {
+				piano.piastrelle[i][j] = creaPiastrella(i, j)
+			}
+		}
+
+		for i:= lenX-1; i <= x; i++ {		//calcolo i circonvicini delle nuove piastrelle dalla parte di x
+			for j := 0; j < lenY; j++ {
+				creaCirconvicini(piano, i, j)
+			}
+		}
+
+		for i := 0; i <= x; i++ {		//calcolo i circonvicini delle nuove piastrelle dalla parte di y e l'incrocio
+			for j := lenY-1; j <= y; j++ {
+				creaCirconvicini(piano, i, j)
+			}
+		}
+	} else 	if x >= lenX {
+		piano.piastrelle = append(piano.piastrelle, make([][]Piastrella, x+1-lenX)...)
+		for i := lenX; i <= x; i++ {
+			piano.piastrelle[i] = make([]Piastrella, lenY)
+			for j := 0; j < lenY; j++ {
+				piano.piastrelle[i][j] = creaPiastrella(i, j)
+			}
+		}
+
+		for i:= lenX-1; i <= x; i++ {
+			for j := 0; j < lenY; j++ {
+				creaCirconvicini(piano, i, j)
+			}
+		}
+	} else if y >= lenY {
+		for i := 0; i < lenX; i++ {
+			piano.piastrelle[i] = append(piano.piastrelle[i], make([]Piastrella, y+1-lenY)...)
+			for j:= lenY; j <= y; j++ {
+				piano.piastrelle[i][j] = creaPiastrella(i, j)
+			}
+		}
+
+		for i := 0; i < lenX; i++ {
+			for j := lenY-1; j <= y; j++ {
+				creaCirconvicini(piano, i, j)
+			}
+		}
+	} else {
+		return
+	}
+}
+
 //funzione costruttrice che crea un piano di piastrelle, con n piastrelle per lato
-func creaPiano(n int) Piano{
+func creaPiano(n, m int) Piano{
 	piano := make([][]Piastrella, n)
 	for i := 0; i < n; i++ {
-		piano[i] = make([]Piastrella, n)
+		piano[i] = make([]Piastrella, m)
 		for j := 0; j < n; j++ {
 			piano[i][j] = creaPiastrella(i, j)
 		}
 	}
+	p := Piano{piano, make([]Regola, 0)}
 
-	return Piano{creaCirconvicini(piano, n), make([]Regola, 0)}
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			creaCirconvicini(p, i, j)
+		}
+	}
+	return p
 }
 
 //funzione costruttrice che crea i circonvicini di ogni piastrella del piano
@@ -154,73 +298,70 @@ func creaPiano(n int) Piano{
 //		  [0]	 |   [1]  |    [2] 
 //        [3]	 |   [4]  |    [5]
 //        [6]	 |   [7]  |    [8]
-func creaCirconvicini(piano [][]Piastrella, n int) [][]Piastrella{
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
-			circonvicini := make([]*Piastrella, 0, 9)
-			//x-1, y+1
-			if i > 0 && j < n-1 {
-				circonvicini = append(circonvicini, &piano[i-1][j+1])
-			} else {
-				circonvicini = append(circonvicini, nil)
-			}
-
-			//x, y+1
-			if j < n-1 {
-				circonvicini = append(circonvicini, &piano[i][j+1])
-			} else {
-				circonvicini = append(circonvicini, nil)
-			}
-
-			//x+1, y+1
-			if i < n-1 && j < n-1 {
-				circonvicini = append(circonvicini, &piano[i+1][j+1])
-			} else {
-				circonvicini = append(circonvicini, nil)
-			}
-
-			//x-1, y
-			if i > 0 {
-				circonvicini = append(circonvicini, &piano[i-1][j])
-			} else {
-				circonvicini = append(circonvicini, nil)
-			}
-
-			//x, y
-			circonvicini = append(circonvicini, &piano[i][j])
-
-			//x+1, y
-			if i < n-1 {
-				circonvicini = append(circonvicini, &piano[i+1][j])
-			} else {
-				circonvicini = append(circonvicini, nil)
-			}
-
-			//x-1, y-1
-			if i > 0 && j > 0 {
-				circonvicini = append(circonvicini, &piano[i-1][j-1])
-			} else {
-				circonvicini = append(circonvicini, nil)
-			}
-
-			//x, y-1
-			if j > 0 {
-				circonvicini = append(circonvicini, &piano[i][j-1])
-			} else {
-				circonvicini = append(circonvicini, nil)
-			}
-
-			//x+1, y-1
-			if i < n-1 && j > 0 {
-				circonvicini = append(circonvicini, &piano[i+1][j-1])
-			} else {
-				circonvicini = append(circonvicini, nil)
-			}
-
-			piano[i][j].circonvicini = circonvicini
-		}
+func creaCirconvicini(piano Piano, i, j int) {
+	circonvicini := make([]*Piastrella, 0, 9)
+	lenX := len(piano.piastrelle)
+	lenY := len(piano.piastrelle[0])
+	//x-1, y+1
+	if i > 0 && j < lenY-1 {
+		circonvicini = append(circonvicini, &piano.piastrelle[i-1][j+1])
+	} else {
+		circonvicini = append(circonvicini, nil)
 	}
-	return piano
+
+	//x, y+1
+	if j < lenY-1 {
+		circonvicini = append(circonvicini, &piano.piastrelle[i][j+1])
+	} else {
+		circonvicini = append(circonvicini, nil)
+	}
+
+	//x+1, y+1
+	if i < lenX-1 && j < lenY-1 {
+		circonvicini = append(circonvicini, &piano.piastrelle[i+1][j+1])
+	} else {
+		circonvicini = append(circonvicini, nil)
+	}
+
+	//x-1, y
+	if i > 0 {
+		circonvicini = append(circonvicini, &piano.piastrelle[i-1][j])
+	} else {
+		circonvicini = append(circonvicini, nil)
+	}
+
+	//x, y
+	circonvicini = append(circonvicini, &piano.piastrelle[i][j])
+
+	//x+1, y
+	if i < lenX-1 {
+		circonvicini = append(circonvicini, &piano.piastrelle[i+1][j])
+	} else {
+		circonvicini = append(circonvicini, nil)
+	}
+
+	//x-1, y-1
+	if i > 0 && j > 0 {
+		circonvicini = append(circonvicini, &piano.piastrelle[i-1][j-1])
+	} else {
+		circonvicini = append(circonvicini, nil)
+	}
+
+	//x, y-1
+	if j > 0 {
+		circonvicini = append(circonvicini, &piano.piastrelle[i][j-1])
+	} else {
+		circonvicini = append(circonvicini, nil)
+	}
+
+	//x+1, y-1
+	if i < lenX-1 && j > 0 {
+		circonvicini = append(circonvicini, &piano.piastrelle[i+1][j-1])
+	} else {
+		circonvicini = append(circonvicini, nil)
+	}
+
+	piano.piastrelle[i][j].circonvicini = circonvicini
 }
 
 //funzione costruttrice che crea una piastrella con i punti passati
@@ -256,6 +397,9 @@ func circonvicini(piastX, piastY Piastrella) bool {
 
 //trova il blocco, ovvero la regione di ampiezza massima, di piastrelle adiacenti alla piastrella in posizione x, y
 func trovaBlocco(piano Piano, x, y int) []Piastrella {
+	if !Accesa(piano.piastrelle[x][y]) {
+		return nil
+	}
 	visiting, piast := make([]Piastrella, 0), make([]Piastrella, 0)
 	visiting = append(visiting, piano.piastrelle[x][y])
 	piast = append(piast, piano.piastrelle[x][y])
@@ -290,6 +434,9 @@ func trovaBlocco(piano Piano, x, y int) []Piastrella {
 //piastrelle adiacenti alla piastrella in posizione x, y con lo stesso 
 //colore della piastrella in posizione x, y
 func trovaBloccoOmogeneo(piano Piano, x, y int) []Piastrella {
+	if !Accesa(piano.piastrelle[x][y]) {
+		return nil
+	}
 	visiting, piast := make([]Piastrella, 0), make([]Piastrella, 0)
 	colore := piano.piastrelle[x][y].colore
 	visiting = append(visiting, piano.piastrelle[x][y])
@@ -385,7 +532,7 @@ func spegni(piano Piano, x, y int) {
 
 //Definisce la regola di propagazione k1α1 + k2α2 + · · · + knαn → β e 
 //la inserisce in fondo all’elenco delle regole.
-func regola(piano Piano, regola string) Piano{
+func regola(piano Piano, regola string) {
 	reg := strings.Split(regola, " ")
 	beta := reg[0]
 	reg = reg[1:]
@@ -397,16 +544,21 @@ func regola(piano Piano, regola string) Piano{
 	}
 
 	piano.regole = append(piano.regole, Regola{alfa, beta, 0})
-	return piano
 }
+
 //Stampa e restituisce il colore e l’intensità di Piastrella(x, y). 
 //Se Piastrella(x, y) è spenta, non stampa nulla.
-func stato(piano Piano, x, y int) {
-	fmt.Println("Colore ed intensità: ", piano.piastrelle[x][y].colore, " ", piano.piastrelle[x][y].intenisita)
+func stato(piano Piano, x, y int) (string, int){
+	if !Accesa(piano.piastrelle[x][y]) {
+		return "", 0
+	}
+	fmt.Println(piano.piastrelle[x][y].colore, " ", piano.piastrelle[x][y].intenisita)
+	return piano.piastrelle[x][y].colore, piano.piastrelle[x][y].intenisita
 }
 
 //Stampa l’elenco delle regole di propagazione, nell’ordine attuale.
 func stampa(piano Piano) {
+	fmt.Println("(")
 	for _, v := range piano.regole {
 		//giallo: 1 rosso 1 blu
 		str:=v.beta + ": "
@@ -417,38 +569,39 @@ func stampa(piano Piano) {
 
 		fmt.Println(str)
 	}
+	fmt.Println(")")
 }
 
 //Calcola e stampa la somma delle intensità delle piastrelle contenute 
 //nel blocco di appartenenza di Piastrella(x, y).
 //Se Piastrella(x, y) è spenta, restituisce 0.
-func blocco(piano Piano, x, y int) int{
+func blocco(piano Piano, x, y int) {
 	if !Accesa(piano.piastrelle[x][y]) {
-		return 0
+		fmt.Println("0")
+		return
 	}
 	pias := trovaBlocco(piano, x, y)
 	somma := 0
 	for i := 0; i < len(pias); i++ {
 		somma += pias[i].intenisita
 	}
-	fmt.Println("Somma intensità blocco: ", somma)
-	return somma
+	fmt.Println(somma)
 }
 
 //Calcola e stampa la somma delle intensit`a delle piastrelle contenute 
 //nel blocco omogeneo di appartenenza di Piastrella(x, y). Se Piastrella(x, y) 
 //`e spenta, restituisce 0.
-func bloccoOmog(piano Piano, x, y int) int{
+func bloccoOmog(piano Piano, x, y int) {
 	if !Accesa(piano.piastrelle[x][y]) {
-		return 0
+		fmt.Println("0")
+		return
 	}
 	pias := trovaBloccoOmogeneo(piano, x, y)
 	somma := 0
 	for i := 0; i < len(pias); i++ {
 		somma += pias[i].intenisita
 	}
-	fmt.Println("Somma intensità blocco omogeneo: ", somma)
-	return somma
+	fmt.Println(somma)
 }
 
 //Applica a Piastrella(x, y) la prima regola di propagazione applicabile
@@ -501,13 +654,12 @@ func propaga(piano Piano, x, y int) {
 
 //Propaga il colore sul blocco di appartenenza di Piastrella(x, y).
 func propagaBlocco(piano Piano, x, y int) {
+	if !Accesa(piano.piastrelle[x][y]) {
+		return
+	}
 	blocco := trovaBlocco(piano, x, y)
 	copia := make([]Piastrella, len(blocco))
 	copy(copia, blocco)
-
-	for i := 0; i < len(blocco); i++ {
-		fmt.Print(blocco[i].colore, " ")
-	}
 
 	for i := 0; i < len(blocco); i++ {
 		intorno := blocco[i].circonvicini
@@ -547,10 +699,6 @@ func propagaBlocco(piano Piano, x, y int) {
 		if regvalida {
 			copia[i].colore = reg.beta
 		}
-	}
-	fmt.Println()
-	for i := 0; i < len(copia); i++ {
-		fmt.Print(copia[i].colore, " ")
 	}
 
 	for i := 0; i < len(copia); i++ {
@@ -666,5 +814,36 @@ func pista(piano Piano, x, y int, s string) {
 //Determina la lunghezza della pista più breve che parte da Piastrella(x1, y1)
 //e arriva in Piastrella(x2, y2). Altrimenti non stampa nulla.
 func lung(piano Piano, x1, y1, x2, y2 int) {
-	
+	coda := make([]Piastrella, 0)
+	visitato := make([][]bool, len(piano.piastrelle))
+	for i := 0; i < len(piano.piastrelle); i++ {
+		visitato[i] = make([]bool, len(piano.piastrelle[0]))
+	}
+
+	coda = append(coda, piano.piastrelle[x1][y1])
+	visitato[x1][y1] = true
+	dist := 0
+
+	for len(coda) > 0 {
+		size := len(coda)
+
+		for i := 0; i < size; i++ {
+			piastrella := coda[0]
+			coda = coda[1:]
+
+			if piastrella.punti[0].x == x2 && piastrella.punti[0].y == y2 {
+				fmt.Println("Lunghezza della pista più breve:", dist)
+				return
+			}
+
+			for _, circonvicino := range piastrella.circonvicini {
+				if !visitato[circonvicino.punti[0].x][circonvicino.punti[0].y] {
+					coda = append(coda, *circonvicino)
+					visitato[circonvicino.punti[0].x][circonvicino.punti[0].y] = true
+				}
+			}
+		}
+
+		dist++
+	}
 }
