@@ -10,3 +10,18 @@ C 0 1 f 18
 C 2 2 d 59
 C 5 5 u 69
 C 0 3 t 13
+C 6 2 l 10
+C 5 2 o 50
+C 5 3 u 20
+a
+r b 2 i 1 l
+r a 2 i
+r s 1 h 1 d
+r u 1 h
+s
+p 5 2
+p 2 3
+p 4 1
+s
+a
+q

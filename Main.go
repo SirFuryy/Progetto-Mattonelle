@@ -54,20 +54,37 @@ func main() {
 	var input string
 	var piano Piano
 	piano = creaPiano(10, 10)
+
+	/*
+	scanner := bufio.NewScanner(os.Stdin)
 	for eseguito {
-		scanner := bufio.NewScanner(os.Stdin)
 		if scanner.Scan() {
 			input = scanner.Text()
 		}
 		esegui(piano, input)
+	}*/
+
+
+	file, err := os.Open("input_2.txt")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		input = scanner.Text()
+		piano = esegui(piano, input)
 	}
 
-
-
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+	}
 }
 
 //funzione che esegue il comando passato in input
-func esegui(piano Piano, input string) {
+func esegui(piano Piano, input string) Piano{
 	inp := strings.Split(input, " ")
 	comando := inp[0]
 	inp = inp[1:]
@@ -77,23 +94,24 @@ func esegui(piano Piano, input string) {
 		y, _ := strconv.Atoi(inp[1])
 		alpha := inp[2]
 		i, _ := strconv.Atoi(inp[3])
-		checkPiano(piano, x, y)
+		checkPiano(&piano, x, y)
 		colora(piano, x, y, alpha, i)
 		break
 	case "S":
 		x, _ := strconv.Atoi(inp[0])
 		y, _ := strconv.Atoi(inp[1])
-		checkPiano(piano, x, y)
+		checkPiano(&piano, x, y)
 		spegni(piano, x, y)
 		break
 	case "r":
 		reg := strings.Join(inp, " ")
+		piano.regole = append(piano.regole, Regola{})
 		regola(piano, reg)
 		break
 	case "?":
 		x, _ := strconv.Atoi(inp[0])
 		y, _ := strconv.Atoi(inp[1])
-		checkPiano(piano, x, y)
+		checkPiano(&piano, x, y)
 		stato(piano, x, y)
 		break
 	case "s":
@@ -102,29 +120,29 @@ func esegui(piano Piano, input string) {
 	case "b":
 		x, _ := strconv.Atoi(inp[0])
 		y, _ := strconv.Atoi(inp[1])
-		checkPiano(piano, x, y)
+		checkPiano(&piano, x, y)
 		blocco(piano, x, y)
 		break
 	case "B":
 		x, _ := strconv.Atoi(inp[0])
 		y, _ := strconv.Atoi(inp[1])
-		checkPiano(piano, x, y)
+		checkPiano(&piano, x, y)
 		bloccoOmog(piano, x, y)
 		break
 	case "p":
 		x, _ := strconv.Atoi(inp[0])
 		y, _ := strconv.Atoi(inp[1])
-		checkPiano(piano, x, y)
+		checkPiano(&piano, x, y)
 		propaga(piano, x, y)
 		break
 	case "P":
 		x, _ := strconv.Atoi(inp[0])
 		y, _ := strconv.Atoi(inp[1])
-		checkPiano(piano, x, y)
+		checkPiano(&piano, x, y)
 		propagaBlocco(piano, x, y)
 		break
 	case "o":
-		ordina(piano)
+		piano.regole = mergeSort(piano.regole)
 		break
 	case "q":
 		eseguito = false
@@ -133,7 +151,7 @@ func esegui(piano Piano, input string) {
 		x, _ := strconv.Atoi(inp[0])
 		y, _ := strconv.Atoi(inp[1])
 		s := inp[2]
-		checkPiano(piano, x, y)
+		checkPiano(&piano, x, y)
 		pista(piano, x, y, s)
 		break
 	case "L":
@@ -141,8 +159,8 @@ func esegui(piano Piano, input string) {
 		y1, _ := strconv.Atoi(inp[1])
 		x2, _ := strconv.Atoi(inp[2])
 		y2, _ := strconv.Atoi(inp[3])
-		checkPiano(piano, x1, y1)
-		checkPiano(piano, x2, y2)
+		checkPiano(&piano, x1, y1)
+		checkPiano(&piano, x2, y2)
 		lung(piano, x1, y1, x2, y2)
 		break
 	case "a":
@@ -151,6 +169,7 @@ func esegui(piano Piano, input string) {
 	default:
 		break
 	}
+	return piano
 }
 
 
@@ -167,16 +186,16 @@ func stampaPiano(piano Piano) {
 	}
 	fmt.Println("  "+ str)
 
-	for i := len(piano.piastrelle)-1; i >=0 ; i-- {
+	for j := len(piano.piastrelle[0])-1; j >= 0; j-- {
 		fmt.Print("  |")
-		for j := 0; j < len(piano.piastrelle[i]); j++ {
-			fmt.Print(" " + piano.piastrelle[j][i].colore + " |")	//lettere sono invertite
+		for i := 0; i < len(piano.piastrelle) ; i++ {
+			fmt.Print(" " + piano.piastrelle[i][j].colore + " |")	//lettere sono invertite
 		}													//perchè la matrice è invertita
 		fmt.Println()
-		if i == 0 {
-			fmt.Println(i, str+"->")
+		if j == 0 {
+			fmt.Println(j, str+"->")
 		} else {
-			fmt.Println(i, str)
+			fmt.Println(j, str)
 		}
 	}
 	fmt.Print("  ")
@@ -205,7 +224,7 @@ func stampaPiastrella(piast Piastrella) {
 
 //funzione di utilità che controlla se la piastrella in posizione x, y è
 //all'interno del piano
-func checkPiano(piano Piano, x, y int) {
+func checkPiano(piano *Piano, x, y int) {
 	lenX := len(piano.piastrelle)
 	lenY := len(piano.piastrelle[0])
 
@@ -226,13 +245,13 @@ func checkPiano(piano Piano, x, y int) {
 
 		for i:= lenX-1; i <= x; i++ {		//calcolo i circonvicini delle nuove piastrelle dalla parte di x
 			for j := 0; j < lenY; j++ {
-				creaCirconvicini(piano, i, j)
+				creaCirconvicini(*piano, i, j)
 			}
 		}
 
 		for i := 0; i <= x; i++ {		//calcolo i circonvicini delle nuove piastrelle dalla parte di y e l'incrocio
 			for j := lenY-1; j <= y; j++ {
-				creaCirconvicini(piano, i, j)
+				creaCirconvicini(*piano, i, j)
 			}
 		}
 	} else 	if x >= lenX {
@@ -246,7 +265,7 @@ func checkPiano(piano Piano, x, y int) {
 
 		for i:= lenX-1; i <= x; i++ {
 			for j := 0; j < lenY; j++ {
-				creaCirconvicini(piano, i, j)
+				creaCirconvicini(*piano, i, j)
 			}
 		}
 	} else if y >= lenY {
@@ -259,12 +278,10 @@ func checkPiano(piano Piano, x, y int) {
 
 		for i := 0; i < lenX; i++ {
 			for j := lenY-1; j <= y; j++ {
-				creaCirconvicini(piano, i, j)
+				creaCirconvicini(*piano, i, j)
 			}
 		}
-	} else {
-		return
-	}
+	} 
 }
 
 //funzione costruttrice che crea un piano di piastrelle, con n piastrelle per lato
@@ -272,14 +289,14 @@ func creaPiano(n, m int) Piano{
 	piano := make([][]Piastrella, n)
 	for i := 0; i < n; i++ {
 		piano[i] = make([]Piastrella, m)
-		for j := 0; j < n; j++ {
+		for j := 0; j < m; j++ {
 			piano[i][j] = creaPiastrella(i, j)
 		}
 	}
 	p := Piano{piano, make([]Regola, 0)}
 
 	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+		for j := 0; j < m; j++ {
 			creaCirconvicini(p, i, j)
 		}
 	}
@@ -384,28 +401,16 @@ func Accesa(piastrella Piastrella) bool {
 	return piastrella.intenisita > 0
 }
 
-//funzione di utilità che restituisce true se la piastrella X è circonvicina 
-//alla piastrella y, false altrimenti
-func circonvicini(piastX, piastY Piastrella) bool {
-	for i := 0; i < len(piastX.circonvicini); i++ {
-		if piastX.circonvicini[i].punti[0] == piastY.punti[0] {
-			return true
-		}
-	}
-	return false
-}
-
-//trova il blocco, ovvero la regione di ampiezza massima, di piastrelle adiacenti alla piastrella in posizione x, y
+//trova il blocco, ovvero la regione di ampiezza massima, di piastrelle 
+//adiacenti alla piastrella in posizione x, y
 func trovaBlocco(piano Piano, x, y int) []Piastrella {
 	if !Accesa(piano.piastrelle[x][y]) {
 		return nil
 	}
-	visiting, piast := make([]Piastrella, 0), make([]Piastrella, 0)
-	visiting = append(visiting, piano.piastrelle[x][y])
+	piast := make([]Piastrella, 0)
 	piast = append(piast, piano.piastrelle[x][y])
-	for len(visiting) > 0 {
-		u := visiting[0]
-		visiting = visiting[1:]
+	for i:=0; i<len(piast); i++ {
+		u := piast[i]
 		for i := 0; i < len(u.circonvicini); i++ {
 			if u.circonvicini[i] == nil {
 				continue
@@ -420,7 +425,6 @@ func trovaBlocco(piano Piano, x, y int) []Piastrella {
 					}
 				}
 				if nonvisit {
-					visiting = append(visiting, pcontrollo)
 					piast = append(piast, pcontrollo)
 				}
 			}
@@ -437,13 +441,11 @@ func trovaBloccoOmogeneo(piano Piano, x, y int) []Piastrella {
 	if !Accesa(piano.piastrelle[x][y]) {
 		return nil
 	}
-	visiting, piast := make([]Piastrella, 0), make([]Piastrella, 0)
+	piast := make([]Piastrella, 0)
 	colore := piano.piastrelle[x][y].colore
-	visiting = append(visiting, piano.piastrelle[x][y])
 	piast = append(piast, piano.piastrelle[x][y])
-	for len(visiting) > 0 {
-		u := visiting[0]
-		visiting = visiting[1:]
+	for i:=0; i<len(piast); i++{
+		u := piast[i]
 		for i := 0; i < len(u.circonvicini); i++ {
 			if u.circonvicini[i] == nil {
 				continue
@@ -458,7 +460,6 @@ func trovaBloccoOmogeneo(piano Piano, x, y int) []Piastrella {
 					}
 				}
 				if nonvisit {
-					visiting = append(visiting, pcontrollo)
 					piast = append(piast, pcontrollo)
 				}
 			}
@@ -466,20 +467,6 @@ func trovaBloccoOmogeneo(piano Piano, x, y int) []Piastrella {
 	}
 
 	return piast
-}
-
-// Funzione di utilità che implementa l'algoritmo di merge sort per 
-//ordinare l'array di regole in modo crescente
-func mergeSort(regole []Regola) []Regola {
-	if len(regole) <= 1 {
-		return regole
-	}
-
-	meta := len(regole) / 2
-	sinistro := mergeSort(regole[:meta])
-	destro := mergeSort(regole[meta:])
-
-	return merge(sinistro, destro)
 }
 
 //Funzione di utilità che svolge il merge per combinare due array 
@@ -543,7 +530,7 @@ func regola(piano Piano, regola string) {
 		alfa[a] = k
 	}
 
-	piano.regole = append(piano.regole, Regola{alfa, beta, 0})
+	piano.regole[len(piano.regole)-1] = Regola{alfa, beta, 0}
 }
 
 //Stampa e restituisce il colore e l’intensità di Piastrella(x, y). 
@@ -552,7 +539,7 @@ func stato(piano Piano, x, y int) (string, int){
 	if !Accesa(piano.piastrelle[x][y]) {
 		return "", 0
 	}
-	fmt.Println(piano.piastrelle[x][y].colore, " ", piano.piastrelle[x][y].intenisita)
+	fmt.Println(piano.piastrelle[x][y].colore, piano.piastrelle[x][y].intenisita)
 	return piano.piastrelle[x][y].colore, piano.piastrelle[x][y].intenisita
 }
 
@@ -567,7 +554,7 @@ func stampa(piano Piano) {
 			str += fmt.Sprintf("%d %s ", v, k)
 		}
 
-		fmt.Println(str)
+		fmt.Println(str, v.usato)
 	}
 	fmt.Println(")")
 }
@@ -608,13 +595,8 @@ func bloccoOmog(piano Piano, x, y int) {
 //dell’elenco, ricolorando la piastrella. Se nessuna regola è applicabile,
 //non viene eseguita alcuna operazione.
 func propaga(piano Piano, x, y int) {
-	intorno := piano.piastrelle[x][y].circonvicini
-	moment := intorno[5:]
-	intorno = intorno[:4]
-	intorno = append(intorno, moment...)
-	
-	var reg Regola
-	regvalida := false
+	intorno := piano.piastrelle[x][y].circonvicini[:4]
+	intorno = append(intorno, piano.piastrelle[x][y].circonvicini[5:]...)
 
 	mappaIntorno := make(map[string]int)
 	for i := 0; i < len(intorno); i++ {
@@ -623,7 +605,7 @@ func propaga(piano Piano, x, y int) {
 		}
 	}
 
-	for _, v := range piano.regole {
+	for i, v := range piano.regole {
 		trovato := false
 		for k, u := range v.alfa {
 			if mappaIntorno[k] < u {
@@ -635,20 +617,14 @@ func propaga(piano Piano, x, y int) {
 		}
 
 		if trovato {
-			reg = v
-			regvalida = true
-			v.usato++
-			break
+			if !Accesa(piano.piastrelle[x][y]) {
+				colora(piano, x, y, v.beta, 1)
+			} else {
+				piano.piastrelle[x][y].colore = v.beta
+			}
+			piano.regole[i].usato++
+			return
 		}
-	}
-
-	if !regvalida {
-		return
-	}
-
-	piano.piastrelle[x][y].colore = reg.beta
-	if !Accesa(piano.piastrelle[x][y]) {
-		piano.piastrelle[x][y].intenisita = 1
 	}
 }
 
@@ -662,10 +638,8 @@ func propagaBlocco(piano Piano, x, y int) {
 	copy(copia, blocco)
 
 	for i := 0; i < len(blocco); i++ {
-		intorno := blocco[i].circonvicini
-		moment := intorno[5:]
-		intorno = intorno[:4]
-		intorno = append(intorno, moment...)
+		intorno := blocco[i].circonvicini[:4]
+		intorno = append(intorno, blocco[i].circonvicini[5:]...)
 	
 		var reg Regola
 		regvalida := false
@@ -676,8 +650,7 @@ func propagaBlocco(piano Piano, x, y int) {
 				mappaIntorno[intorno[i].colore]++
 			}
 		}
-
-		for _, v := range piano.regole {
+		for i, v := range piano.regole {
 			trovato := false
 			for k, u := range v.alfa {
 				if mappaIntorno[k] < u {
@@ -691,11 +664,11 @@ func propagaBlocco(piano Piano, x, y int) {
 			if trovato {
 				reg = v
 				regvalida = true
-				v.usato++
+				piano.regole[i].usato++
 				break
 			}
 		}
-
+		
 		if regvalida {
 			copia[i].colore = reg.beta
 		}
@@ -710,9 +683,18 @@ func propagaBlocco(piano Piano, x, y int) {
 
 //Ordina l’elenco delle regole di propagazione in base al consumo delle 
 //regole stesse: la regola con consumo maggiore diventa l’ultima dell’elenco. 
-//Se due regole hanno consumo uguale mantengono il loro ordine relativo.
-func ordina(piano Piano) {
-	piano.regole = mergeSort(piano.regole)
+//Se due regole hanno consumo uguale mantengono il loro ordine relativo. Lo fa
+//implementando l'algoritmo di merge sort
+func mergeSort(regole []Regola) []Regola {
+	if len(regole) <= 1 {
+		return regole
+	}
+
+	meta := len(regole) / 2
+	sinistro := mergeSort(regole[:meta])
+	destro := mergeSort(regole[meta:])
+
+	return merge(sinistro, destro)
 }
 
 //Stampa la pista che parte da Piastrella(x, y) e segue la sequenza di 
@@ -814,6 +796,9 @@ func pista(piano Piano, x, y int, s string) {
 //Determina la lunghezza della pista più breve che parte da Piastrella(x1, y1)
 //e arriva in Piastrella(x2, y2). Altrimenti non stampa nulla.
 func lung(piano Piano, x1, y1, x2, y2 int) {
+	if !Accesa(piano.piastrelle[x1][y1]) || !Accesa(piano.piastrelle[x2][y2]) {
+		return
+	}
 	coda := make([]Piastrella, 0)
 	visitato := make([][]bool, len(piano.piastrelle))
 	for i := 0; i < len(piano.piastrelle); i++ {
@@ -822,10 +807,11 @@ func lung(piano Piano, x1, y1, x2, y2 int) {
 
 	coda = append(coda, piano.piastrelle[x1][y1])
 	visitato[x1][y1] = true
-	dist := 0
+	dist := 1
 
 	for len(coda) > 0 {
 		size := len(coda)
+		dist++
 
 		for i := 0; i < size; i++ {
 			piastrella := coda[0]
@@ -837,6 +823,10 @@ func lung(piano Piano, x1, y1, x2, y2 int) {
 			}
 
 			for _, circonvicino := range piastrella.circonvicini {
+				if circonvicino == nil {
+					continue
+				}
+				
 				if !visitato[circonvicino.punti[0].x][circonvicino.punti[0].y] {
 					coda = append(coda, *circonvicino)
 					visitato[circonvicino.punti[0].x][circonvicino.punti[0].y] = true
@@ -844,6 +834,8 @@ func lung(piano Piano, x1, y1, x2, y2 int) {
 			}
 		}
 
-		dist++
+		
 	}
+
+	fmt.Println("Lunghezza della pista più breve: ", dist)
 }
