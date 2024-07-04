@@ -66,7 +66,7 @@ func main() {
 
 
 	
-	file, err := os.Open("tezt\\input_4.txt")
+	file, err := os.Open("tezt\\input_6.txt")
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -319,25 +319,26 @@ func trovaBlocco(piano *piano, x, y int) []*Piastrella {
 	if !Accesa(piano, x, y) {
 		return nil
 	}
-	piast := make(map[Punto]*Piastrella, 0)
-	ret := make([]*Piastrella, 0)
-	piast[Punto{x, y}] = piano.piastrelle[Punto{x, y}]
-	for _, v:= range piast {
-		for _, circonvicino := range v.circonvicini {
-			if circonvicino == nil {
-				continue
-			}
-			if circonvicino.intenisita > 0 {
-				if _, exist := piast[circonvicino.punti[0]]; !exist {
-					piast[circonvicino.punti[0]] = circonvicino
-					fmt.Println(circonvicino.punti[0])
-				}
+
+	visitato := make(map[Punto]bool)
+	coda := []*Piastrella{piano.piastrelle[Punto{x, y}]}
+	blocco := []*Piastrella{piano.piastrelle[Punto{x, y}]}
+	visitato[Punto{x, y}] = true
+
+	for len(coda) > 0 {
+		curr := coda[0]
+		coda = coda[1:]
+
+		for _, circonvicino := range curr.circonvicini {
+			if circonvicino != nil && !visitato[circonvicino.punti[0]] && circonvicino.intenisita > 0 {
+				coda = append(coda, circonvicino)
+				blocco = append(blocco, circonvicino)
+				visitato[circonvicino.punti[0]] = true
 			}
 		}
-		ret = append(ret, v)
 	}
 
-	return ret
+	return blocco
 }
 
 //trova il blocco omogeneo, ovvero la regione di ampiezza massima, di 
@@ -347,25 +348,27 @@ func trovaBloccoOmogeneo(piano *piano, x, y int) []*Piastrella {
 	if !Accesa(piano, x, y) {
 		return nil
 	}
-	piast := make(map[Punto]*Piastrella, 0)
-	ret := make([]*Piastrella, 0)
+
+	visitato := make(map[Punto]bool)
 	colore := piano.piastrelle[Punto{x, y}].colore
-	piast[Punto{x, y}] = piano.piastrelle[Punto{x, y}]
-	for _, v:= range piast {
-		for _, circonvicino := range v.circonvicini {
-			if circonvicino == nil {
-				continue
-			}
-			if circonvicino.intenisita > 0 && circonvicino.colore == colore{
-				if _, exist := piast[circonvicino.punti[0]]; !exist {
-					piast[circonvicino.punti[0]] = circonvicino
-				}
+	coda := []*Piastrella{piano.piastrelle[Punto{x, y}]}
+	blocco := []*Piastrella{piano.piastrelle[Punto{x, y}]}
+	visitato[Punto{x, y}] = true
+
+	for len(coda) > 0 {
+		curr := coda[0]
+		coda = coda[1:]
+
+		for _, circonvicino := range curr.circonvicini {
+			if circonvicino != nil && !visitato[circonvicino.punti[0]] && circonvicino.intenisita > 0 && circonvicino.colore == colore{
+				coda = append(coda, circonvicino)
+				blocco = append(blocco, circonvicino)
+				visitato[circonvicino.punti[0]] = true
 			}
 		}
-		ret = append(ret, v)
 	}
 
-	return ret
+	return blocco
 }
 
 //Funzione di utilità che svolge il merge per combinare due array 
@@ -549,22 +552,23 @@ func propagaBlocco(piano *piano, x, y int) {
 		return
 	}
 	blocco := trovaBlocco(piano, x, y)
-	fmt.Println(len(blocco))
-	copia := make([]*Piastrella, len(blocco))
-	copy(copia, blocco)
+	copia := make([]Piastrella, len(blocco))
+	for i := 0; i < len(blocco); i++ {
+		copia[i] = *blocco[i]
+	}
 
 	for i := 0; i < len(blocco); i++ {
 		intorno := blocco[i].circonvicini[:4]
 		intorno = append(intorno, blocco[i].circonvicini[5:]...)
 
 		mappaIntorno := make(map[string]int)
-		for i := 0; i < len(intorno); i++ {
-			if intorno[i] != nil {
-				mappaIntorno[intorno[i].colore]++
+		for j := 0; j < len(intorno); j++ {
+			if intorno[j] != nil {
+				mappaIntorno[intorno[j].colore]++
 			}
 		}
 		
-		for i, v := range piano.regole {
+		for j, v := range piano.regole {
 			trovato := false
 			for k, u := range v.alfa {
 				if mappaIntorno[k] < u {
@@ -576,12 +580,11 @@ func propagaBlocco(piano *piano, x, y int) {
 			}
 
 			if trovato {
-				piano.regole[i].usato++
+				piano.regole[j].usato++
 				copia[i].colore = v.beta
 				break
 			}
 		}
-		fmt.Println(blocco[i].punti[0])
 	}
 
 	for i := 0; i < len(copia); i++ {

@@ -1,5 +1,5 @@
 func main() {
-	piano := creaPiano(6)
+	piano := piano{make(map[Punto]*Piastrella), make([]Regola, 0)}
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	valgen:= rnd.Intn(26)
@@ -17,6 +17,32 @@ func main() {
 		colora(piano, num1, num2, color, intens)
 	}
 	
-
+	for k, v := range piano.piastrelle {
+		fmt.Println(k, v.colore, v.intenisita)
+	}
 	stampaPiano(piano)
 }
+
+visited := make([][]bool, len(piano.piastrelle))
+	for i := range visited {
+		visited[i] = make([]bool, len(piano.piastrelle))
+	}
+
+	queue := []*Piastrella{piano.piastrelle[Punto{x, y}]}
+	blocco := []*Piastrella{piano.piastrelle[Punto{x, y}]}
+	visited[x][y] = true
+
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		for _, circonvicino := range curr.circonvicini {
+			if circonvicino != nil && !visited[circonvicino.punti[0].x][circonvicino.punti[0].y] && circonvicino.intenisita > 0 {
+				queue = append(queue, circonvicino)
+				blocco = append(blocco, circonvicino)
+				visited[circonvicino.punti[0].x][circonvicino.punti[0].y] = true
+			}
+		}
+	}
+
+	return blocco
