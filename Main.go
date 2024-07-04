@@ -330,6 +330,7 @@ func trovaBlocco(piano *piano, x, y int) []*Piastrella {
 			if circonvicino.intenisita > 0 {
 				if _, exist := piast[circonvicino.punti[0]]; !exist {
 					piast[circonvicino.punti[0]] = circonvicino
+					fmt.Println(circonvicino.punti[0])
 				}
 			}
 		}
