@@ -18,10 +18,14 @@ r b 2 i 1 l
 r a 2 i
 r s 1 h 1 d
 r u 1 h
+? 5 2
+? 4 1
 s
 p 5 2
 p 2 3
 p 4 1
 s
+? 5 2
+? 4 1
 a
 q
