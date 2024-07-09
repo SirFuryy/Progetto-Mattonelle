@@ -1,8 +1,6 @@
 # Progetto-Mattonelle
 Progetto di Algoritmi e basi di dati laboratorio sessione estiva
 
-https://img.shields.io/badge/progetto-algoritmi-blue
-
 Il progetto si propone di mantenere e risolvere diverse operazioni di insiemi di piastrelle digitali disposte su un piano bidimensionale, di analizzare le configurazioni e di studiare l'influenza che queste configurazioni esercitano sulle piastrelle circostanti sulla base del loro stato.
 
 ## Operazioni
