@@ -31,9 +31,9 @@ type Piastrella struct {
 }
 
 //struttura dati per rappresentare un piano di piastrelle, 
-//con un numero di piastrelle n*n, con n > 0
+//con un numero di piastrelle n*m, con n,m > 0
 //
-//il piano è composto da piastrelle, che sono disposte in una matrice n*n, 
+//il piano è composto da piastrelle e da regole di propagazione 
 type piano struct {
 	piastrelle map[Punto]*Piastrella
 	regole []Regola
@@ -55,32 +55,12 @@ func main() {
 	var input string
 	piano := piano{make(map[Punto]*Piastrella), make([]Regola, 0)}
 
-	/*
 	scanner := bufio.NewScanner(os.Stdin)
 	for eseguito {
 		if scanner.Scan() {
 			input = scanner.Text()
 		}
 		piano = esegui(piano, input)
-	}*/
-
-
-	
-	file, err := os.Open("tezt\\input_6.txt")
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		input = scanner.Text()
-		piano = esegui(piano, input)
-	}
-
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Error reading file:", err)
 	}
 }
 
@@ -155,65 +135,13 @@ func esegui(piano piano, input string) piano{
 		y2, _ := strconv.Atoi(inp[3])
 		lung(&piano, x1, y1, x2, y2)
 		break
-	case "a":
-		stampaPiano(piano)
-		break
 	default:
 		break
 	}
 	return piano
 }
 
-
-/* FUNZIONI DI STAMPA*/
-
-//funzione di utilità che stampa lo stato del piano, con il colore delle piastrelle
-//attualmente accese (non l'intensità)
-func stampaPiano(piano piano) {
-	dimmX := 0
-	dimmY := 0
-	for k := range piano.piastrelle {
-		if k.x > dimmX {
-			dimmX = k.x
-		}
-		if k.y > dimmY {
-			dimmY = k.y
-		}
-	}
-	fmt.Println("  ^")
-	fmt.Println("  |")
-	str := "|"
-	for i:=0; i<dimmX+1; i++ {
-		str += "---|"
-	}
-	fmt.Println("  "+ str)
-
-	for j := dimmY; j >= 0; j-- {
-		fmt.Print("  |")
-		for i := 0; i < dimmX+1 ; i++ {
-			p, exist := piano.piastrelle[Punto{i, j}]
-			if exist && p.intenisita > 0{
-				fmt.Print(" " + p.colore + " |")
-			} else {
-				fmt.Print("   |")
-			}
-		}
-		fmt.Println()
-		if j == 0 {
-			fmt.Println(j, str+"->")
-		} else {
-			fmt.Println(j, str)
-		}
-	}
-	fmt.Print("  ")
-	for i:= 0; i < dimmX+1; i++ {
-		fmt.Print(i, "   ")
-	}
-	fmt.Println()
-}
-
-
-/* FUNZIONI DI COSTRUZIONE */
+/*  FUNZIONI DI UTILITA  */
 
 //funzione costruttrice che crea i circonvicini di ogni piastrella del piano
 //l'array conterrà le piastrelle circonvicine ordinate a partire dalla 
@@ -298,11 +226,6 @@ func creaCirconvicini(piano piano, piast *Piastrella, i, j int) {
 
 	piast.circonvicini = circonvicini
 }
-
-
-
-
-/*  FUNZIONI DI UTILITA  */
 
 //funzione di utilità che restituisce true se la piastrella è accessa, 
 //false altrimenti
@@ -399,9 +322,6 @@ func merge(sinistro, destro []Regola) []Regola {
 
 	return risultato
 }
-
-
-
 
 /* FUNZIONI RICHIESTE DAL PROGETTO */
 
