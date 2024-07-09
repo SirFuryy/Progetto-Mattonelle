@@ -27,7 +27,7 @@ type Piastrella struct {
 	punti []Punto
 	colore string
 	intenisita int
-	circonvicini []*Piastrella 
+	circonvicini []*Piastrella
 }
 
 //struttura dati per rappresentare un piano di piastrelle, 
@@ -61,7 +61,7 @@ func main() {
 		if scanner.Scan() {
 			input = scanner.Text()
 		}
-		esegui(piano, input)
+		piano = esegui(piano, input)
 	}*/
 
 
@@ -321,8 +321,8 @@ func trovaBlocco(piano *piano, x, y int) []*Piastrella {
 	}
 
 	visitato := make(map[Punto]bool)
-	coda := []*Piastrella{piano.piastrelle[Punto{x, y}]}
-	blocco := []*Piastrella{piano.piastrelle[Punto{x, y}]}
+	coda := []*Piastrella{piano.piastrelle[Punto{x, y}]}	//creo e inserisco il primo elemento
+	blocco := []*Piastrella{piano.piastrelle[Punto{x, y}]}	//creo e inserisco il primo elemento
 	visitato[Punto{x, y}] = true
 
 	for len(coda) > 0 {
@@ -469,7 +469,7 @@ func stampa(p piano) {
 			str += fmt.Sprintf("%d %s ", v.alfa[alpha], alpha)
 		}
 
-		fmt.Println(str, v.usato)
+		fmt.Println(str)
 	}
 	fmt.Println(")")
 }
@@ -510,8 +510,8 @@ func bloccoOmog(piano *piano, x, y int) {
 //dell’elenco, ricolorando la piastrella. Se nessuna regola è applicabile,
 //non viene eseguita alcuna operazione.
 func propaga(piano *piano, x, y int) {
-	if !Accesa(piano, x, y) {
-		return
+	if _, exist := piano.piastrelle[Punto{x, y}]; !exist {
+		colora(*piano, x, y, "", 0)		//la coloro, dunque la creo, ma come se fosse spenta
 	}
 	intorno := piano.piastrelle[Punto{x,y}].circonvicini[:4]
 	intorno = append(intorno, piano.piastrelle[Punto{x,y}].circonvicini[5:]...)
@@ -535,15 +535,15 @@ func propaga(piano *piano, x, y int) {
 		}
 
 		if trovato {
-			if !Accesa(piano, x, y) {
-				colora(*piano, x, y, v.beta, 1)
-			} else {
-				piano.piastrelle[Punto{x,y}].colore = v.beta
+			piano.piastrelle[Punto{x,y}].colore = v.beta
+			if piano.piastrelle[Punto{x,y}].intenisita == 0 {
+				piano.piastrelle[Punto{x,y}].intenisita = 1
 			}
 			piano.regole[i].usato++
 			return
 		}
 	}
+
 }
 
 //Propaga il colore sul blocco di appartenenza di Piastrella(x, y).
@@ -701,48 +701,30 @@ func lung(piano *piano, x1, y1, x2, y2 int) {
 		return
 	}
 
-	// Coda per la BFS
 	coda := make([]*Piastrella, 0)
-	// Mappa per tenere traccia dei nodi visitati
 	visitato := make(map[Punto]bool)
 
-	// Aggiungiamo la piastrella di partenza alla coda
 	coda = append(coda, piano.piastrelle[Punto{x1, y1}])
-	// Segniamo la piastrella di partenza come visitata
 	visitato[Punto{x1, y1}] = true
-	// Distanza iniziale
 	dist := 1
 
 	for len(coda) > 0 {
-		// Numero di piastrelle da visitare in questo livello
 		numPiastrelle := len(coda)
-
-		// Esploriamo tutte le piastrelle in questo livello
 		for i := 0; i < numPiastrelle; i++ {
-			// Prendiamo la piastrella corrente dalla coda
 			piastrellaCorrente := coda[0]
 			coda = coda[1:]
-
-			// Se abbiamo raggiunto la piastrella di destinazione, restituiamo la distanza
 			if piastrellaCorrente.punti[0].x == x2 && piastrellaCorrente.punti[0].y == y2 {
 				fmt.Println(dist)
 				return
 			}
-
-			// Aggiungiamo i circonvicini della piastrella corrente alla coda
 			for _, circonvicino := range piastrellaCorrente.circonvicini {
-				// Se il circonvicino non è stato visitato, lo aggiungiamo alla coda
 				if circonvicino != nil && !visitato[circonvicino.punti[0]] {
 					coda = append(coda, circonvicino)
 					visitato[circonvicino.punti[0]] = true
 				}
 			}
 		}
-
-		// Incrementiamo la distanza per il prossimo livello
 		dist++
 	}
-
-	// Se non è stata trovata una pista, non stampiamo nulla
 }
 
